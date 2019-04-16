@@ -94,3 +94,37 @@ In another Screen:
 ```
 $ ./scripts/smartconfig/main.py
 ``` 
+
+# Interact via curl
+
+Device should appear e.g. on 10.42.42.42. Ping it to confirm.
+
+Fetch backup:
+
+```
+$ curl -JO http://10.42.42.42/backup
+```
+
+Get device info:
+
+```
+$ curl http://10.42.42.42
+```
+
+Undo:
+
+```
+$ curl http://10.42.42.42/undo
+```
+
+Set conversation software in user2:
+
+```
+$ curl http://10.42.42.42/flash2"
+```
+
+Flash:
+
+```
+$ curl curl http://10.42.42.42/flash3
+```
