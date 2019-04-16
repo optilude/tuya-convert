@@ -1,32 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 
 # Source config
 . ../config.txt
 
-if test -d /etc/NetworkManager; then
-	echo "Backing up NetworkManager.cfg..."
-	sudo cp /etc/NetworkManager/NetworkManager.conf /etc/NetworkManager/NetworkManager.conf.backup
-
-	cat <<- EOF > /etc/NetworkManager/NetworkManager.conf
-		[main]
-		plugins=keyfile
-
-		[keyfile]
-		unmanaged-devices=interface-name:$WLAN
-	EOF
-
-	echo "Restarting NetworkManager..."
-	sudo service network-manager restart
-fi
-sudo ifconfig $WLAN up
-
-echo "Backing up /etc/dnsmasq.conf..."
-sudo cp /etc/dnsmasq.conf /etc/dnsmasq.conf.backup
-
+# TODO: Do we need this?
+# ifconfig $WLAN up
 
 echo "Writing dnsmasq config file..."
-echo "Creating new /etc/dnsmasq.conf..."
-cat <<- EOF >/etc/dnsmasq.conf
+echo "Creating new /tmp/dnsmasq-tuya.conf..."
+cat <<- EOF >/tmp/dnsmasq-tuya.conf
 	# disables dnsmasq reading any other files like /etc/resolv.conf for nameservers
 	no-resolv
 	# Interface to bind to
@@ -42,57 +24,54 @@ cat <<- EOF >/etc/dnsmasq.conf
 	address=/tuyacn.com/10.42.42.1
 EOF
 
-echo "Writing hostapd config file..."
-cat <<- EOF >/etc/hostapd/hostapd.conf
-	interface=$WLAN
-	driver=nl80211
-	ssid=$AP
-	hw_mode=g
-	channel=1
-	macaddr_acl=0
-	auth_algs=1
-	ignore_broadcast_ssid=0
-	wpa=2
-	wpa_passphrase=$PASS
-	wpa_key_mgmt=WPA-PSK
-	wpa_pairwise=TKIP
-	rsn_pairwise=CCMP
-EOF
+# TODO: We probably don't need this since the router does its own thing
+# echo "Writing hostapd config file..."
+# cat <<- EOF >/etc/hostapd/hostapd.conf
+#	interface=$WLAN
+#	driver=nl80211
+#	ssid=$AP
+#	hw_mode=g
+#	channel=1
+#	macaddr_acl=0
+#	auth_algs=1
+#	ignore_broadcast_ssid=0
+#	wpa=2
+#	wpa_passphrase=$PASS
+#	wpa_key_mgmt=WPA-PSK
+#	wpa_pairwise=TKIP
+#	rsn_pairwise=CCMP
+# EOF
 
 echo "Configuring AP interface..."
-sudo ifconfig $WLAN up 10.42.42.1 netmask 255.255.255.0
+ifconfig $WLAN up 10.42.42.1 netmask 255.255.255.0
+
 echo "Applying iptables rules..."
-sudo iptables --flush
-sudo iptables --table nat --flush
-sudo iptables --delete-chain
-sudo iptables --table nat --delete-chain
-sudo iptables --table nat --append POSTROUTING --out-interface $ETH -j MASQUERADE
-sudo iptables --append FORWARD --in-interface $WLAN -j ACCEPT
+iptables --flush
+iptables --table nat --flush
+iptables --delete-chain
+iptables --table nat --delete-chain
+iptables --table nat --append POSTROUTING --out-interface $ETH -j MASQUERADE
+iptables --append FORWARD --in-interface $WLAN -j ACCEPT
 
 echo "Starting DNSMASQ server..."
-sudo /etc/init.d/dnsmasq stop > /dev/null 2>&1
-sudo pkill dnsmasq
-sudo dnsmasq
+pkill dnsmasq
+dnsmasq --conf-file=/tmp/dnsmasq-tuya.conf
 
-sudo sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1
+# TODO: Do we need this or will the router handle?
+# sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1
 
-sudo ip route add 255.255.255.255 dev $WLAN
+ip route add 255.255.255.255 dev $WLAN
 
+# echo "Starting AP on $WLAN in screen terminal..."
+# hostapd /etc/hostapd/hostapd.conf
 
-echo "Starting AP on $WLAN in screen terminal..."
-sudo hostapd /etc/hostapd/hostapd.conf
+read -p "Waiting ... Press Enter to clean up"
 
-if test -d /etc/NetworkManager; then
-	sudo rm /etc/NetworkManager/NetworkManager.conf > /dev/null 2>&1
-	sudo mv /etc/NetworkManager/NetworkManager.conf.backup /etc/NetworkManager/NetworkManager.conf
-	sudo service network-manager restart
-fi
-sudo /etc/init.d/dnsmasq stop > /dev/null 2>&1
-sudo pkill dnsmasq
-sudo rm /etc/dnsmasq.conf > /dev/null 2>&1
-sudo mv /etc/dnsmasq.conf.backup /etc/dnsmasq.conf > /dev/null 2>&1
-sudo rm /etc/dnsmasq.hosts > /dev/null 2>&1
-sudo iptables --flush
-sudo iptables --flush -t nat
-sudo iptables --delete-chain
-sudo iptables --table nat --delete-chain
+pkill dnsmasq
+
+ip route del 255.255.255.255
+
+iptables --flush
+iptables --flush -t nat
+iptables --delete-chain
+iptables --table nat --delete-chain

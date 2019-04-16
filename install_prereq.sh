@@ -2,10 +2,9 @@
 
 set -e
 
-sudo apt-get update
-sudo apt-get upgrade -y
-sudo apt-get install -y dnsmasq hostapd screen curl python3-pip python3-setuptools python3-wheel mosquitto haveged
+opkg update
 
-sudo pip3 install paho-mqtt pyaes tornado
+opkg install git git-http screen python3 python3-pip mosquitto haveged
+pip3 install --upgrade setuptools
+pip3 install paho-mqtt pyaes tornado
 
-echo "Ready to start upgrade"
