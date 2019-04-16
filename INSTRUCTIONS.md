@@ -2,6 +2,10 @@
 
 ## Configure network in admin interface
 
+Set wlan to access point mode
+
+Set up NAT to eth0
+
 Set network to 10.42.42.x, with router on 10.42.42.1, serving DHCP addresses from 10.42.42.10 to .42
 
 Set AP name to `vtrust-flash` and WPA2 password to `flashmeifyoucan`
