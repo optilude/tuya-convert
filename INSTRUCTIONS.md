@@ -91,11 +91,11 @@ $ curl http://10.42.42.42/undo
 Set conversation software in user2:
 
 ```
-$ curl http://10.42.42.42/flash2"
+$ curl http://10.42.42.42/flash2
 ```
 
 Flash:
 
 ```
-$ curl curl http://10.42.42.42/flash3
+$ curl http://10.42.42.42/flash3
 ```
